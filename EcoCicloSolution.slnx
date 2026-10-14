@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="EcoCiclo.API/EcoCiclo.API.csproj" />
+  <Project Path="EcoCiclo.Domain/EcoCiclo.Domain.csproj" Id="0b256da3-dde7-4228-b0b3-8c9fbdeccbd1" />
+  <Project Path="EcoCiclo.Infrastructure/EcoCiclo.Infrastructure.csproj" Id="7d3b5b28-8e80-46ef-b5f3-a913438dde30" />
+  <Project Path="EcoCiclo.Tests/EcoCiclo.Tests.csproj" Id="c01507aa-a0a5-4103-bda4-97a1abb89872" />
+</Solution>

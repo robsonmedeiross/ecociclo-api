@@ -1,0 +1,83 @@
+======================================================================
+                  ECOCICLO API - GESTÃO DE RESÍDUOS (ESG)
+======================================================================
+
+1. SOBRE O PROJETO
+----------------------------------------------------------------------
+A EcoCiclo API é uma solução desenvolvida em .NET 8 Core focada 
+no pilar de Gestão de Resíduos e Reciclagem (Tema 2 do Edital ESG). 
+O sistema monitora ecopontos/lixeiras inteligentes e gerencia o 
+agendamento de coletas de materiais recicláveis para evitar 
+transbordamentos e otimizar rotas de coleta.
+
+2. ARQUITETURA E REQUISITOS TÉCNICOS ATENDIDOS
+----------------------------------------------------------------------
+* Arquitetura estruturada em camadas isoladas (API, Domain, Infrastructure, Tests).
+* Banco de dados SQL Server Local (LocalDB) integrado via EF Core Migrations.
+* Mecanismo de paginação otimizada em consultas (AsNoTracking, .Skip e .Take).
+* Segurança e autenticação de endpoints críticos via JWT Bearer.
+* Validação de dados de entrada (bloqueio de dados negativos/inválidos).
+* Cobertura de testes unitários automatizados com o framework xUnit.
+* Arquivo de configuração Docker (Dockerfile) incluído na raiz da API.
+
+3. DESCRIÇÃO DOS ENDPOINTS IMPLEMENTADOS
+----------------------------------------------------------------------
+* POST /api/auth/login
+  -> Simula a autenticação e retorna o Token JWT para os endpoints críticos.
+
+* POST /api/coletas
+  -> [ENDPOINT CRÍTICO - REQUER JWT] Realiza o agendamento de uma nova coleta.
+  -> Possui validação ativa (não aceita PesoEstimadoKg <= 0 ou Nome vazio).
+
+* GET /api/coletas
+  -> Lista todos os agendamentos salvos.
+  -> [PAGINAÇÃO ATIVA] Aceita os parâmetros de query 'page' e 'pageSize'.
+
+* POST /api/pontos-coleta
+  -> Endpoint auxiliar para criação de novos Ecopontos para a base de testes.
+
+* POST /api/pontos-coleta/alerta
+  -> Simula a recepção de dados de sensores IoT. Se o volume enviado for 
+     maior ou igual à capacidade máxima da lixeira, o sistema dispara a 
+     regra de negócio ESG e altera o status do ponto para "PrecisaColeta = true".
+
+* GET /api/pontos-coleta/otimizacao
+  -> Retorna a lista de todos os pontos críticos que atingiram o limite, 
+     permitindo a otimização da rota de reciclagem.
+
+4. GUIA PASSO A PASSO PARA TESTE (INSOMNIA/POSTMAN)
+----------------------------------------------------------------------
+Para testar a aplicação utilizando a collection inclusa neste projeto, 
+siga o roteiro abaixo:
+
+Passo 1: Iniciar a Aplicação
+* Abra a solução 'EcoCicloSolution.sln' no Visual Studio 2022.
+* Clique no botão de Play (EcoCiclo.API / https) para iniciar o servidor. 
+  A janela do Prompt de Comando (CMD) abrirá indicando a porta ativa (ex: localhost:7263).
+
+Passo 2: Configurar a Collection no Insomnia/Postman
+* Importe o arquivo de collection incluso no ZIP de entrega.
+* Como as portas locais variam por máquina, lembre-se de ajustar a variável 
+  'base_url' do seu ambiente ou mudar o início da URL das rotas para bater 
+  com a porta gerada pelo seu Visual Studio (ex: https://localhost:7263).
+* IMPORTANTE: Como o certificado HTTPS local é de desenvolvimento, desative 
+  a validação de certificados nas configurações do seu client HTTP 
+  (No Insomnia: 'Disable SSL Validation').
+
+Passo 3: Roteiro Lógico de Teste
+1. Execute um 'POST' em '/api/pontos-coleta' enviando um JSON com uma lixeira 
+   de capacidade máxima de 50.0kg. Note que ela será criada com ID 1.
+2. Execute um 'POST' em '/api/pontos-coleta/alerta?id=1&volumeAtual=55.0'. 
+   Note que o sistema aplicará a regra ESG e retornará o Alerta de Capacidade Esgotada.
+3. Execute o 'POST' em '/api/auth/login' para gerar o Token JWT de simulação. 
+   Copie o token gerado na resposta.
+4. Vá até o 'POST' de '/api/coletas', selecione a aba Auth (Bearer Token), 
+   cole o token e faça um agendamento válido. (Tente enviar peso 0 para testar a validação).
+5. Execute o 'GET' em '/api/coletas?page=1&pageSize=5' para ver a paginação funcionando.
+
+5. EXECUÇÃO DOS TESTES UNITÁRIOS
+----------------------------------------------------------------------
+* No menu superior do Visual Studio, acesse: Teste -> Gerenciador de Testes.
+* Clique em "Executar todos os testes". Os testes xUnit serão compilados 
+  e retornarão com sucesso (Verde), validando o HttpStatusCode 200 das rotas.
+======================================================================

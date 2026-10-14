@@ -1,0 +1,60 @@
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace EcoCiclo.Infrastructure.Migrations
+{
+    /// <inheritdoc />
+    public partial class InitialCreate : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.CreateTable(
+                name: "AgendamentosColeta",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    EmpresaUsuario = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Endereco = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PesoEstimadoKg = table.Column<double>(type: "float", nullable: false),
+                    DataAgendamento = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AgendamentosColeta", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PontosColeta",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Localizacao = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    TipoResiduo = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CapacidadeMaximaKg = table.Column<double>(type: "float", nullable: false),
+                    CapacidadeAtualKg = table.Column<double>(type: "float", nullable: false),
+                    PrecisaColeta = table.Column<bool>(type: "bit", nullable: false),
+                    UltimaSincronizacao = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PontosColeta", x => x.Id);
+                });
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropTable(
+                name: "AgendamentosColeta");
+
+            migrationBuilder.DropTable(
+                name: "PontosColeta");
+        }
+    }
+}
