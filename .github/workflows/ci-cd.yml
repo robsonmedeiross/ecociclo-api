@@ -3,9 +3,15 @@ name: EcoCiclo - CI/CD
 
 on:
   push:
-    branches: [main]
+    branches:
+      - develop
+      - main
+
   pull_request:
-    branches: [main]
+    branches:
+      - develop
+      - main
+
   workflow_dispatch:
 
 permissions:
@@ -17,10 +23,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout do codigo
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Instalar .NET 8
+      - name: Configurar .NET 8
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
@@ -28,25 +34,25 @@ jobs:
       - name: Restaurar dependencias
         run: dotnet restore EcoCicloSolution.slnx
 
-      - name: Compilar projeto
+      - name: Compilar solucao
         run: dotnet build EcoCicloSolution.slnx -c Release --no-restore
 
       - name: Executar testes unitarios
         run: dotnet test EcoCiclo.Tests/EcoCiclo.Tests.csproj -c Release --no-build
 
   docker-build:
-    name: Validar Build Docker
-    runs-on: ubuntu-latest
+    name: Build Docker
     needs: testes
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout do codigo
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Configurar Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Construir imagem Docker
+      - name: Validar imagem Docker
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -54,26 +60,57 @@ jobs:
           push: false
           tags: ecociclo-api:teste
 
-  docker-push:
-    name: Publicar no Docker Hub
-    runs-on: ubuntu-latest
+  deploy-staging:
+    name: Deploy Staging
     needs: docker-build
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    environment: staging
 
     steps:
-      - name: Checkout do codigo
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Configurar Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login no Docker Hub
+      - name: Login Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build e Push da imagem
+      - name: Build e Push Staging
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: EcoCiclo.API/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/ecociclo-api:staging
+            ${{ secrets.DOCKERHUB_USERNAME }}/ecociclo-api:staging-${{ github.sha }}
+
+  deploy-production:
+    name: Deploy Production
+    needs: docker-build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build e Push Production
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -81,4 +118,4 @@ jobs:
           push: true
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/ecociclo-api:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/ecociclo-api:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/ecociclo-api:prod-${{ github.sha }}
